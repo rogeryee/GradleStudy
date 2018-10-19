@@ -24,7 +24,7 @@ task helloWorld << {
 // 复制文件从 source目录 到 destination目录
 task copyFile(type: Copy) {
     from 'source'
-    into 'destination'
+    into 'dest'
 }
 
 // 3. 调用Project的task()方法创建Task
@@ -49,4 +49,84 @@ tasks.create(name: 'hello4') << {
     println 'hello4'
 }
 
+// 5. 声明Task之间的依赖关系
+// 5.1　定义一个Task的同时声明它的依赖关系　
+task hello5(dependsOn:hello4) << {
+    println 'hello5'
+}
+
+// 5.2 定义Task之后再声明依赖
+task hello6 << {
+    println 'hello6'
+}
+hello6.dependsOn hello5
+
+// 6. 配置Task的Property
+// 6.1 在task中设置property
+task hello7 << {
+    description = "this is hello7"
+    println description
+}
+
+// 6.2 通过闭包的方式来配置一个已有的Task
+task hello8 << {
+    println description
+}
+
+hello8 {
+    description = "this is hello8"
+}
+
+// 6.3 调用Task的configure()方法完成Property的设置：
+task hello9 << {
+    println description
+}
+
+hello9.configure {
+    description = "this is hello9"
+}
+
+// 7. 指定一个Group
+task hello10(group: 'testGroup') {  // 指定一个testGroup Group
+    doLast {
+        println 'this is hello10'
+    }
+}
+
+// 8. 增量式地执行项目
+// 如果我们修改了inputs（即source文件夹）中的任何一个文件或删除掉了des/destination.txt，
+// 当调用“gradle combineFileContentIncremental”时，Gradle又会重新执行，因为此时的Task已经不再是最新的了
+task combineFileContentNonIncremental {
+    def sources = fileTree('source')
+    def destination = file('dest/destination.txt')
+
+    inputs.dir sources
+    outputs.file destination
+
+    doLast {
+        destination.withPrintWriter { writer ->
+            sources.each {source ->
+                writer.println source.text
+            }
+        }
+    }
+}
+
+// 9. 自定义Task
+// 9.1 build.gradle文件中直接定义，需要继承自DefaultTask
+class HelloWorldTask extends DefaultTask {
+    // @Optional 表示在配置该Task时，message是可选的。
+    @Optional
+    String message = 'I am Roger'
+    // @TaskAction 表示该Task要执行的动作,即在调用该Task时，hello()方法将被执行
+    @TaskAction
+    def hello(){
+        println "hello world $message"
+    }
+}
+
+task hello11(type: HelloWorldTask)
+
+// 9.2 在Groovy文件中定义
+task hello12(type: com.yee.study.groovy.task.HelloWorldTask2)
 
